@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101410">
+  <title>Splitwise — Shared expenses, sorted</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101410;
+      --panel: #191e19;
+      --panel-raised: #202720;
+      --line: #30382f;
+      --text: #f4f1e8;
+      --muted: #a3aa9e;
+      --accent: #c4f36b;
+      --accent-ink: #19210e;
+      --red: #ff927d;
+      --green: #c4f36b;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 82% 2%, rgb(196 243 107 / 8%), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+    }
+
+    button, textarea { font: inherit; }
+
+    .shell { width: min(940px, calc(100% - 40px)); margin: 0 auto; }
+
+    header {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgb(255 255 255 / 7%);
+    }
+
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 750; letter-spacing: -.04em; }
+    .brand-mark {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-size: 17px;
+    }
+    .header-note { color: var(--muted); font-size: 13px; }
+
+    main { padding: 70px 0 80px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { width: 7px; height: 7px; border-radius: 50%; background: currentColor; content: ""; }
+    h1 {
+      max-width: 680px;
+      margin: 18px 0 12px;
+      font-size: clamp(42px, 7vw, 68px);
+      letter-spacing: -.065em;
+      line-height: 1.02;
+    }
+    h1 span { color: var(--accent); }
+    .intro { max-width: 580px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
+
+    .composer {
+      margin-top: 36px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgb(25 30 25 / 94%);
+      box-shadow: 0 20px 60px rgb(0 0 0 / 18%);
+    }
+    .composer-label { display: block; margin-bottom: 11px; font-size: 13px; font-weight: 650; }
+    .input-wrap { position: relative; }
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 82px;
+      resize: vertical;
+      padding: 17px 138px 17px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+      background: #111511;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    textarea::placeholder { color: #777f74; }
+    textarea:focus { border-color: #7f9c4f; box-shadow: 0 0 0 3px rgb(196 243 107 / 10%); }
+    .split-button {
+      position: absolute;
+      top: 11px;
+      right: 11px;
+      min-height: 48px;
+      padding: 0 17px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--accent);
+      color: var(--accent-ink);
+      cursor: pointer;
+      font-weight: 750;
+      transition: filter .15s, transform .15s;
+    }
+    .split-button:hover { filter: brightness(1.08); }
+    .split-button:active { transform: scale(.98); }
+    .hint-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--muted); font-size: 12px; }
+
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .example {
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: transparent;
+      color: #c7ccc2;
+      cursor: pointer;
+      font-size: 12px;
+      transition: border-color .15s, color .15s;
+    }
+    .example:hover { border-color: #718354; color: var(--accent); }
+
+    .message { min-height: 20px; margin: 10px 2px 0; color: var(--red); font-size: 13px; }
+    .result { margin-top: 24px; }
+    .result[hidden] { display: none; }
+    .result-heading { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 13px; }
+    h2 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
+    .result-subtitle { margin-top: 5px; color: var(--muted); font-size: 13px; }
+    .card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+    .expense-summary { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 19px 21px; border-bottom: 1px solid var(--line); }
+    .expense-title { font-size: 15px; font-weight: 700; }
+    .expense-meta { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .expense-total { color: var(--accent); font-size: 22px; font-weight: 750; letter-spacing: -.04em; white-space: nowrap; }
+    .section-label { padding: 14px 21px 8px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .settlement-list, .people-list { padding: 0 21px 7px; }
+    .settlement, .person { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
+    .settlement + .settlement, .person + .person { border-top: 1px solid rgb(255 255 255 / 6%); }
+    .settlement-copy { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+    .avatar { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border: 1px solid #3c4833; border-radius: 50%; background: #293222; color: var(--accent); font-size: 11px; font-weight: 750; }
+    .arrow { color: #7d8778; }
+    .settlement-amount { font-size: 14px; font-weight: 750; }
+    .person-name { display: flex; align-items: center; gap: 10px; color: #e5e8e1; font-size: 14px; }
+    .share-note { margin-left: auto; color: var(--muted); font-size: 12px; }
+    .balance-positive { color: var(--green); font-size: 13px; font-weight: 700; }
+    .balance-negative { color: var(--red); font-size: 13px; font-weight: 700; }
+    .balance-zero { color: var(--muted); font-size: 13px; }
+    .none-owed { margin: 0 21px 17px; padding: 12px; border-radius: 9px; background: var(--panel-raised); color: #d0d7c9; font-size: 13px; }
+    .footnote { margin: 13px 3px 0; color: #828b7e; font-size: 12px; line-height: 1.6; }
+
+    footer { display: flex; justify-content: space-between; gap: 12px; padding: 18px 0 22px; border-top: 1px solid rgb(255 255 255 / 7%); color: #7e877a; font-size: 12px; }
+
+    @media (max-width: 600px) {
+      .shell { width: min(100% - 28px, 940px); }
+      header { height: 64px; }
+      .header-note { font-size: 11px; }
+      main { padding-top: 48px; }
+      .composer { padding: 14px; }
+      textarea { padding: 14px; min-height: 104px; }
+      .split-button { position: static; width: 100%; min-height: 45px; margin-top: 9px; }
+      .hint-row { align-items: start; flex-direction: column; gap: 5px; }
+      .expense-summary { align-items: start; flex-direction: column; }
+      .expense-total { font-size: 20px; }
+      .settlement-copy { gap: 6px; font-size: 12px; }
+      .avatar { width: 27px; height: 27px; flex-basis: 27px; }
+      .share-note { font-size: 11px; }
+      footer { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">↗</span><span>goodsplit</span></div>
+      <div class="header-note">Less math. More memories.</div>
+    </header>
+
+    <main>
+      <div class="eyebrow">Shared expenses, sorted</div>
+      <h1>Good times.<br><span>Clear tabs.</span></h1>
+      <p class="intro">Describe what happened like you’d tell a friend. We’ll split it evenly and show exactly who owes whom.</p>
+
+      <section class="composer" aria-labelledby="input-label">
+        <label id="input-label" class="composer-label" for="expense-input">What did you spend?</label>
+        <div class="input-wrap">
+          <textarea id="expense-input" placeholder="Dinner 1200, Ravi paid, split with Anu and me" aria-describedby="input-hint"></textarea>
+          <button class="split-button" id="split-button" type="button">Split it ↗</button>
+        </div>
+        <div class="hint-row" id="input-hint">
+          <span>Try: “Dinner ₹1,200, Ravi paid, split with Anu and me”</span>
+          <span>Equal split · INR by default</span>
+        </div>
+        <div class="examples" aria-label="Example expenses">
+          <button class="example" type="button" data-example="Dinner 1200, Ravi paid, split with Anu and me">Dinner with friends</button>
+          <button class="example" type="button" data-example="Cab 480, I paid, split with Sam and Jo">Cab home</button>
+          <button class="example" type="button" data-example="Groceries ₹950, Maya paid, split between Maya, Leo and me">Groceries</button>
+        </div>
+        <p class="message" id="message" role="alert" aria-live="polite"></p>
+      </section>
+
+      <section class="result" id="result" aria-live="polite" hidden>
+        <div class="result-heading">
+          <div>
+            <h2>The fair split</h2>
+            <div class="result-subtitle" id="result-subtitle"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="expense-summary">
+            <div>
+              <div class="expense-title" id="expense-title"></div>
+              <div class="expense-meta" id="expense-meta"></div>
+            </div>
+            <div class="expense-total" id="expense-total"></div>
+          </div>
+          <div class="section-label">Who pays whom</div>
+          <div class="settlement-list" id="settlement-list"></div>
+          <div class="none-owed" id="none-owed" hidden></div>
+          <div class="section-label">Everyone’s share</div>
+          <div class="people-list" id="people-list"></div>
+        </div>
+        <p class="footnote">Assumes an equal split. “Me” means you. Any leftover cent is assigned in the order people were named.</p>
+      </section>
+    </main>
+
+    <footer>
+      <span>Made for the “I’ll get you next time” moments.</span>
+      <span>No sign-up. No awkward follow-ups.</span>
+    </footer>
+  </div>
+
+  <script>
+    const input = document.querySelector("#expense-input");
+    const message = document.querySelector("#message");
+    const result = document.querySelector("#result");
+    const rupee = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 });
+
+    function cleanName(name) {
+      const value = name.trim().replace(/^(?:and|or)\s+/i, "").replace(/[.!?;:]+$/, "").trim();
+      if (/^(?:me|myself|i)$/i.test(value)) return "You";
+      return value.replace(/\s+/g, " ");
+    }
+
+    function parseExpense(sentence) {
+      const amountMatches = [...sentence.matchAll(/(?:₹\s*)?(\d+(?:,\d{3})*(?:\.\d{1,2})?)/g)];
+      if (amountMatches.length !== 1) {
+        throw new Error(amountMatches.length ? "Add just one amount to describe a single expense." : "Add an amount, like 1200 or ₹1,200.");
+      }
+      const amountText = amountMatches[0][1].replace(/,/g, "");
+      const amount = Math.round(Number(amountText) * 100);
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error("The amount needs to be greater than zero.");
+      if (amount > Number.MAX_SAFE_INTEGER) throw new Error("That amount is too large to split safely.");
+
+      const paidPattern = /(?:(?:^|[,;.!?]\s*)([\p{L}][\p{L}\p{M}'’-]*(?:\s+[\p{L}][\p{L}\p{M}'’-]*){0,2})\s+paid\b|(?:^|[,;.!?]\s*)paid\s+by\s+([\p{L}][\p{L}\p{M}'’-]*(?:\s+[\p{L}][\p{L}\p{M}'’-]*){0,2})|\bI\s+paid\b)/iu;
+      const paidMatch = sentence.match(paidPattern);
+      if (!paidMatch) throw new Error("Say who paid, for example “Ravi paid” or “I paid”.");
+      const payer = cleanName(paidMatch[1] || paidMatch[2] || "You");
+
+      const splitMatch = sentence.match(/\b(?:split|shared|share)\s+(?:it\s+)?(?:equally\s+)?(?:with|between)\s+(.+?)(?=$|[.!?])/i);
+      if (!splitMatch) throw new Error("Say who to split with, for example “split with Anu and me”.");
+
+      const portionAfterSplit = splitMatch[1]
+        .replace(/\s+(?:for|on)\s+.+$/i, "")
+        .replace(/[.!?]+$/, "");
+      const names = portionAfterSplit.split(/\s*,\s*|\s+(?:and|&)\s+|\s+or\s+/i)
+        .map(cleanName)
+        .filter(Boolean);
+      if (!names.length) throw new Error("Add at least one person after “split with”.");
+
+      const participants = [];
+      for (const name of [...names, payer]) {
+        if (!participants.some(person => person.toLocaleLowerCase() === name.toLocaleLowerCase())) participants.push(name);
+      }
+      if (participants.length > 20) throw new Error("This splitter supports up to 20 people at a time.");
+
+      let title = sentence
+        .replace(amountMatches[0][0], " ")
+        .replace(paidPattern, " ")
+        .replace(/\b(?:split|shared|share)\s+(?:it\s+)?(?:equally\s+)?(?:with|between)\s+.+$/i, " ")
+        .replace(/^[\s,.;:–—-]+|[\s,.;:–—-]+$/g, "")
+        .replace(/\s+/g, " ");
+      if (!title) title = "Shared expense";
+
+      return { amount, title, payer, participants };
+    }
+
+    function makeSettlements(expense) {
+      const { amount, payer, participants } = expense;
+      const baseShare = Math.floor(amount / participants.length);
+      const extraCents = amount % participants.length;
+      const balances = new Map();
+
+      participants.forEach((person, index) => {
+        const share = baseShare + (index < extraCents ? 1 : 0);
+        balances.set(person, (person === payer ? amount : 0) - share);
+      });
+
+      const creditors = participants.filter(person => balances.get(person) > 0)
+        .map(person => ({ person, amount: balances.get(person) }));
+      const debtors = participants.filter(person => balances.get(person) < 0)
+        .map(person => ({ person, amount: -balances.get(person) }));
+      const settlements = [];
+
+      for (const debtor of debtors) {
+        for (const creditor of creditors) {
+          const transfer = Math.min(debtor.amount, creditor.amount);
+          if (transfer > 0) {
+            settlements.push({ from: debtor.person, to: creditor.person, amount: transfer });
+            debtor.amount -= transfer;
+            creditor.amount -= transfer;
+          }
+        }
+      }
+      return { balances, settlements, shares: new Map(participants.map((person, index) => [
+        person, baseShare + (index < extraCents ? 1 : 0)
+      ])) };
+    }
+
+    function avatar(name) {
+      return name === "You" ? "Y" : [...name][0].toLocaleUpperCase();
+    }
+
+    function showExpense(expense) {
+      const { balances, settlements, shares } = makeSettlements(expense);
+      document.querySelector("#expense-title").textContent = expense.title;
+      document.querySelector("#expense-meta").textContent =
+        `${expense.payer} paid · split equally between ${expense.participants.join(", ")}`;
+      document.querySelector("#expense-total").textContent = rupee.format(expense.amount / 100);
+      document.querySelector("#result-subtitle").textContent =
+        `${expense.participants.length} ${expense.participants.length === 1 ? "person" : "people"} · ${rupee.format(expense.amount / 100)} total`;
+
+      const settlementList = document.querySelector("#settlement-list");
+      settlementList.replaceChildren();
+      const noneOwed = document.querySelector("#none-owed");
+      noneOwed.hidden = settlements.length > 0;
+      noneOwed.textContent = settlements.length ? "" : "All settled — nobody needs to pay anyone back.";
+      settlements.forEach(({ from, to, amount }) => {
+        const row = document.createElement("div");
+        row.className = "settlement";
+        const copy = document.createElement("div");
+        copy.className = "settlement-copy";
+        for (const name of [from, "→", to]) {
+          const item = document.createElement(name === "→" ? "span" : "span");
+          if (name === "→") {
+            item.className = "arrow";
+            item.textContent = name;
+          } else {
+            item.className = "avatar";
+            item.textContent = avatar(name);
+            item.title = name;
+          }
+          copy.append(item);
+        }
+        const description = document.createElement("span");
+        description.textContent = `${from} pays ${to}`;
+        copy.append(description);
+        const value = document.createElement("span");
+        value.className = "settlement-amount";
+        value.textContent = rupee.format(amount / 100);
+        row.append(copy, value);
+        settlementList.append(row);
+      });
+
+      const peopleList = document.querySelector("#people-list");
+      peopleList.replaceChildren();
+      expense.participants.forEach(person => {
+        const row = document.createElement("div");
+        row.className = "person";
+        const name = document.createElement("div");
+        name.className = "person-name";
+        const icon = document.createElement("span");
+        icon.className = "avatar";
+        icon.textContent = avatar(person);
+        const label = document.createElement("span");
+        label.textContent = person;
+        name.append(icon, label);
+        const share = document.createElement("span");
+        share.className = "share-note";
+        share.textContent = `share ${rupee.format(shares.get(person) / 100)}`;
+        const balance = document.createElement("span");
+        const amount = balances.get(person);
+        balance.className = amount > 0 ? "balance-positive" : amount < 0 ? "balance-negative" : "balance-zero";
+        balance.textContent = amount > 0
+          ? `gets ${rupee.format(amount / 100)}`
+          : amount < 0
+            ? `owes ${rupee.format(-amount / 100)}`
+            : "settled";
+        row.append(name, share, balance);
+        peopleList.append(row);
+      });
+      result.hidden = false;
+      result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function splitCurrentExpense() {
+      message.textContent = "";
+      try {
+        showExpense(parseExpense(input.value.trim()));
+      } catch (error) {
+        message.textContent = error.message;
+        result.hidden = true;
+      }
+    }
+
+    document.querySelector("#split-button").addEventListener("click", splitCurrentExpense);
+    input.addEventListener("keydown", event => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") splitCurrentExpense();
+    });
+    document.querySelectorAll("[data-example]").forEach(button => {
+      button.addEventListener("click", () => {
+        input.value = button.dataset.example;
+        splitCurrentExpense();
+      });
+    });
+  </script>
+</body>
+</html>
